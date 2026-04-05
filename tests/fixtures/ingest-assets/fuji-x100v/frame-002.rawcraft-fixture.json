@@ -1,0 +1,31 @@
+{
+  "assetId": "asset_fuji_x100v_frame_002",
+  "assetIdentity": {
+    "cameraMake": "Fujifilm",
+    "cameraModel": "X100V",
+    "captureTimestamp": "2026-03-14T07:16:00Z"
+  },
+  "profileHints": {
+    "cameraProfileId": "fujifilm/x100v/camera-provia",
+    "inputIccProfileId": "icc/srgb",
+    "workingColorSpaceId": "color/linear-rec2020"
+  },
+  "previewTiers": {
+    "embedded_thumbnail": {
+      "available": true,
+      "width": 1440,
+      "height": 960
+    },
+    "browse_preview": {
+      "available": false
+    },
+    "edit_preview": {
+      "available": false
+    },
+    "full_rerender": {
+      "available": true,
+      "width": 6240,
+      "height": 4160
+    }
+  }
+}

@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "harness": "node src/editor-harness-cli.js",
+    "editor-shell": "node src/editor-shell-server.js"
   },
   "dependencies": {
     "ajv": "^8.17.1",

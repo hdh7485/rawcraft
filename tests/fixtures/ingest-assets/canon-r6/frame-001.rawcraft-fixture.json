@@ -1,0 +1,33 @@
+{
+  "assetId": "asset_canon_r6_frame_001",
+  "assetIdentity": {
+    "cameraMake": "Canon",
+    "cameraModel": "EOS R6 Mark II",
+    "captureTimestamp": "2026-03-14T07:15:00Z"
+  },
+  "profileHints": {
+    "cameraProfileId": "canon/eos-r6m2/adobe-standard",
+    "inputIccProfileId": "icc/adobe-rgb-1998",
+    "workingColorSpaceId": "color/linear-prophoto-rgb"
+  },
+  "previewTiers": {
+    "embedded_thumbnail": {
+      "available": true,
+      "width": 1600,
+      "height": 1067
+    },
+    "browse_preview": {
+      "available": true,
+      "width": 3072,
+      "height": 2048
+    },
+    "edit_preview": {
+      "available": false
+    },
+    "full_rerender": {
+      "available": true,
+      "width": 6000,
+      "height": 4000
+    }
+  }
+}

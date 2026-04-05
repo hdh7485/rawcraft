@@ -135,3 +135,39 @@ persisted document and a replayed document can diverge.
 - `examples/edit-mutation-response.json`
 - `examples/history-replay-request.json`
 - `examples/history-replay-response.json`
+
+## Filesystem Persistence Layout
+
+The default runtime store is repo-local and writes under:
+
+- `.rawcraft-workspace/edit-mutation-store/`
+
+Within that root, the service persists:
+
+- `indexes/locators.json` mapping `(assetId, basedOnAssetRevisionId, virtualCopyId)`
+  locators to canonical `documentId` values
+- `indexes/assets.json` tracking the latest known source asset revision and the
+  base edit-document locator for each asset
+- `documents/<encoded-document-id>/document.json` for the materialized edit
+  document
+- `documents/<encoded-document-id>/events/<sequence>.json` for append-only
+  history events
+- `documents/<encoded-document-id>/checkpoints/<sequence>.json` for replay
+  checkpoints emitted on the configured interval
+
+This layout is intentionally plain JSON so downstream ingest, repair, and shell
+tasks can bootstrap directly from the workspace without a separate database.
+
+## Minimum Bootstrap Flow
+
+1. Choose or create a workspace checkout for the repo.
+2. Start the mutation service with the default filesystem-backed store, or point
+   it at a specific repo-local store directory.
+3. Register the latest known asset revision for any asset that may receive a
+   first-write `create_if_missing` mutation.
+4. Commit an edit mutation. The service writes the materialized document,
+   appends the history event, and emits a checkpoint when the configured
+   interval is hit.
+5. On restart, re-open the same store directory and resolve the current
+   document by `documentId` or `(assetId, basedOnAssetRevisionId,
+   virtualCopyId)`.

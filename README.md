@@ -16,6 +16,7 @@ for the MVP:
 - preview rendering contract and example payloads
 - initial runtime modules for preview rendering and edit mutation flows
 - executable tests that validate the schema and preview runtime behavior
+- repo-local edit-document persistence under `.rawcraft-workspace/`
 
 ## Repository Layout
 
@@ -30,7 +31,67 @@ for the MVP:
 ```bash
 npm install
 npm test
+npm run harness -- bootstrap
+npm run editor-shell
 ```
+
+## Editor Harness
+
+The repo now includes a minimal editor harness CLI that drives the real runtime
+modules against the repo-local edit store and ingest-manifest projection.
+
+By default it uses the fixture-backed ingest assets under
+`tests/fixtures/ingest-assets/` and writes runtime state under
+`.rawcraft-workspace/`.
+
+```bash
+# Seed or reopen the active asset document.
+npm run harness -- bootstrap --asset asset_canon_r6_frame_001
+
+# Inspect the current document and last persisted event.
+npm run harness -- status --asset asset_canon_r6_frame_001
+
+# Force a preview refresh through editorSessionController.
+npm run harness -- refresh-preview --asset asset_canon_r6_frame_001
+
+# Read the persisted history events for the active document.
+npm run harness -- show-history --asset asset_canon_r6_frame_001
+
+# Commit a global adjustment and let the controller refresh preview metadata.
+npm run harness -- set-global exposure --asset asset_canon_r6_frame_001 --params '{"ev":0.8}'
+```
+
+Use `--workspace-root <path>` to point the harness at a different repo-local
+workspace and `--ingest-root <path>` to scan a different ingest asset root.
+
+## Interactive Editor Shell
+
+The repo also includes a browser-hosted shell prototype that runs against the
+same fixture-backed runtime and repo-local workspace as the CLI harness.
+
+```bash
+# Start the shell on the default fixture asset. The command prints the local URL.
+npm run editor-shell
+
+# Pick a specific asset and override the preview delay if you want the stale state
+# to clear faster or slower while testing.
+npm run editor-shell -- \
+  --asset asset_canon_r6_frame_001 \
+  --preview-delay-ms 650 \
+  --port 4173
+```
+
+Open the printed URL in a browser. The shell intentionally stays narrow:
+
+- one active asset only
+- live preview viewport derived from the current preview artifact state
+- committed history list from the persisted edit document
+- global control commits routed through `editorSessionController`
+- a `Simulate Conflict` action that advances the store outside the shell so the
+  next local commit visibly trips optimistic concurrency
+
+The shell uses the same `--workspace-root <path>` and `--ingest-root <path>`
+flags as the harness.
 
 ## Product Direction
 
