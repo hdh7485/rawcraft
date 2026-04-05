@@ -368,17 +368,25 @@ function buildSourceInventory(document) {
 
   if (lineage.previewSource?.tier && CACHEABLE_PREVIEW_TIERS.has(lineage.previewSource.tier)) {
     const tier = lineage.previewSource.tier;
+    const existingSource = inventory[tier];
+    const matchesAssetRevision =
+      !lineage.previewSource.sourceAssetRevisionId ||
+      lineage.previewSource.sourceAssetRevisionId === document.basedOnAssetRevisionId;
     const fresh =
+      matchesAssetRevision &&
       lineage.previewSource.sourceRevisionId === document.currentRevisionId &&
       (lineage.cacheLineage?.invalidatesAfterSequence ?? -1) >= document.latestEventSequence;
 
     inventory[tier] = {
       tier,
-      available: true,
-      fresh,
-      width: inventory[tier]?.width ?? baseDimensions.width,
-      height: inventory[tier]?.height ?? baseDimensions.height,
-      sourceAssetRevisionId: lineage.previewSource.sourceAssetRevisionId ?? document.basedOnAssetRevisionId
+      available: existingSource?.available ?? true,
+      fresh: existingSource?.fresh === true || fresh,
+      width: existingSource?.width ?? baseDimensions.width,
+      height: existingSource?.height ?? baseDimensions.height,
+      sourceAssetRevisionId:
+        existingSource?.sourceAssetRevisionId ??
+        lineage.previewSource.sourceAssetRevisionId ??
+        document.basedOnAssetRevisionId
     };
   }
 

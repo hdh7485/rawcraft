@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 import {
+  applyIngestManifestToDocument,
+  buildAssetIngestManifest
+} from "../src/asset-ingest-manifest.js";
+import {
   InMemoryPreviewCache,
   createPreviewRenderer
 } from "../src/preview-renderer.js";
@@ -79,6 +83,39 @@ test("the renderer falls back to an embedded thumbnail when browse assets are al
   assert.equal(response.status, "degraded_source");
   assert.equal(response.cache.actualPreviewTier, "embedded_thumbnail");
   assert.match(response.warnings[0], /embedded thumbnail/i);
+});
+
+test("the renderer can resolve preview source availability from an ingest manifest projection", async () => {
+  const previewRenderRequest = await readFixture("preview-render-request.json");
+  const manifest = await buildAssetIngestManifest({
+    rootDir: new URL("./fixtures/ingest-assets/", import.meta.url),
+    now: () => new Date("2026-04-05T11:40:00.000Z")
+  });
+
+  previewRenderRequest.renderIntent = "browse_preview";
+  previewRenderRequest.targetPreviewTier = "browse_preview";
+  previewRenderRequest.output.maxLongEdge = 4096;
+  previewRenderRequest.document.metadata.renderLineage.previewSource.sourceRevisionId = "rev_000119";
+  previewRenderRequest.document.metadata.renderLineage.cacheLineage.invalidatesAfterSequence = 119;
+  delete previewRenderRequest.document.metadata.extensions;
+  previewRenderRequest.document = applyIngestManifestToDocument({
+    document: previewRenderRequest.document,
+    manifest,
+    assetId: "asset_canon_r6_frame_001"
+  });
+
+  const renderer = createPreviewRenderer({
+    cache: new InMemoryPreviewCache(),
+    now: () => new Date("2026-04-05T11:41:00.000Z")
+  });
+
+  const response = await renderer.render(previewRenderRequest);
+
+  assert.equal(response.status, "ok");
+  assert.equal(response.cache.actualPreviewTier, "browse_preview");
+  assert.equal(response.preview.width, 3072);
+  assert.equal(response.preview.height, 2048);
+  assert.deepEqual(response.warnings, []);
 });
 
 test("the renderer applies enabled adjustments in literal stack order", async () => {

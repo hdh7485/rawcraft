@@ -1,9 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 import {
   createEditMutationService,
+  FilesystemEditDocumentStore,
   InMemoryEditDocumentStore
 } from "../src/edit-mutation-service.js";
 import { createEditorSessionController } from "../src/editor-session-controller.js";
@@ -450,6 +453,102 @@ test("applyBatchPreset refreshes applied target previews and reconciles the acti
     metadataRequests.map((request) => request.ops[0].type),
     ["document.set_metadata", "document.set_metadata"]
   );
+});
+
+test("filesystem-backed persistence reloads documents, events, and checkpoints across service instances", async () => {
+  const workspaceDirectory = await mkdtemp(join(tmpdir(), "rawcraft-edit-store-"));
+
+  try {
+    const initialDocument = await readFixture("edit-document.json");
+    const firstStore = new FilesystemEditDocumentStore({
+      rootDirectory: workspaceDirectory,
+      checkpointInterval: 125
+    });
+
+    await firstStore.seedDocument(initialDocument);
+
+    const firstService = createEditMutationService({
+      store: firstStore,
+      now: () => new Date("2026-04-05T10:08:10.000Z")
+    });
+
+    const firstCommit = await firstService.commit({
+      requestId: "persist_fs_commit_01",
+      documentLocator: {
+        documentId: initialDocument.documentId
+      },
+      creationDisposition: {
+        mode: "require_existing"
+      },
+      parentRevisionId: initialDocument.currentRevisionId,
+      actor: {
+        id: "user_donghee",
+        type: "human",
+        displayName: "Donghee"
+      },
+      source: {
+        kind: "editor",
+        clientId: "desktop-app",
+        sessionId: "session_editor_01"
+      },
+      intent: {
+        kind: "manual_adjustment",
+        summary: "Adjusted exposure from the editor shell",
+        correlationId: "ui-slider-exposure"
+      },
+      ops: [
+        {
+          type: "adjustment.update_params",
+          adjustmentId: "adj_exposure_01",
+          params: {
+            ev: 0.5
+          },
+          previousParams: {
+            ev: 0.35
+          }
+        }
+      ]
+    });
+
+    assert.equal(firstCommit.status, "applied");
+    assert.ok(firstCommit.checkpoint);
+
+    const reloadedService = createEditMutationService({
+      store: new FilesystemEditDocumentStore({
+        rootDirectory: workspaceDirectory,
+        checkpointInterval: 125
+      })
+    });
+
+    const reloadedDocument = await reloadedService.readDocument({
+      documentId: initialDocument.documentId
+    });
+    const reloadedEvent = await reloadedService.readLatestEvent(initialDocument.documentId);
+    const resolvedLocator = await reloadedService.resolveCurrentDocumentLocator(
+      initialDocument.assetId
+    );
+    const checkpointFiles = await readdir(
+      join(
+        workspaceDirectory,
+        "documents",
+        encodeURIComponent(initialDocument.documentId),
+        "checkpoints"
+      )
+    );
+
+    assert.equal(reloadedDocument.currentRevisionId, "rev_000125");
+    assert.equal(reloadedDocument.latestEventSequence, 125);
+    assert.equal(reloadedDocument.stack.entries[0].params.ev, 0.5);
+    assert.equal(reloadedEvent.sequence, 125);
+    assert.equal(reloadedEvent.ops[0].type, "adjustment.update_params");
+    assert.deepEqual(resolvedLocator, {
+      assetId: initialDocument.assetId,
+      basedOnAssetRevisionId: initialDocument.basedOnAssetRevisionId
+    });
+    assert.deepEqual(checkpointFiles, ["000000000125.json"]);
+  } finally {
+    await rm(workspaceDirectory, { recursive: true, force: true });
+  }
 });
 
 function formatRevisionId(sequence) {
