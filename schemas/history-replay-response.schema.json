@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/history-replay-response.schema.json",
+  "title": "RawCraft History Replay Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "documentId",
+    "replayedSequence",
+    "revisionId",
+    "document",
+    "replayBase"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "documentId": {
+      "type": "string"
+    },
+    "replayedSequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "revisionId": {
+      "type": "string"
+    },
+    "document": {
+      "$ref": "./adjustment-stack.schema.json"
+    },
+    "replayBase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "startSequence"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "origin",
+            "checkpoint"
+          ]
+        },
+        "checkpointId": {
+          "type": "string"
+        },
+        "startSequence": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "appliedEventIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verified": {
+          "type": "boolean"
+        },
+        "stackHashAfter": {
+          "type": "string"
+        },
+        "eventHashChain": {
+          "type": "string"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

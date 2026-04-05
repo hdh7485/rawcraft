@@ -1,0 +1,72 @@
+{
+  "checkpointId": "chk_01HT00PCQW3BAVC4QFJ1N8Y2DP",
+  "schemaVersion": "rawcraft.history-checkpoint/v1",
+  "documentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB",
+  "sequence": 120,
+  "revisionId": "rev_000120",
+  "capturedAt": "2026-04-05T09:49:30Z",
+  "latestEventId": "evt_01HT00P3M3BZ5A6A8M4W9T6K2P",
+  "document": {
+    "documentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB",
+    "schemaVersion": "rawcraft.adjustment-stack/v1",
+    "assetId": "asset_01HSZ4VKGK9N9VQMVTEWZ0P8R4",
+    "basedOnAssetRevisionId": "asset_rev_0001",
+    "currentRevisionId": "rev_000120",
+    "latestEventSequence": 120,
+    "rendererVersion": "process-pipeline/1.0.0",
+    "metadata": {
+      "renderLineage": {
+        "previewSource": {
+          "tier": "edit_preview",
+          "sourceAssetRevisionId": "asset_rev_0001",
+          "sourceRevisionId": "rev_000120",
+          "generatedAt": "2026-04-05T09:49:30Z"
+        },
+        "cacheLineage": {
+          "previewCacheVersion": "preview-cache/v3",
+          "renderCacheVersion": "render-cache/v5",
+          "invalidatesAfterSequence": 120
+        },
+        "inputProfiles": {
+          "cameraProfileId": "canon/eos-r6m2/adobe-standard",
+          "inputIccProfileId": "icc/adobe-rgb-1998",
+          "workingColorSpaceId": "color/linear-prophoto-rgb"
+        },
+        "sidecarLink": {
+          "xmpAssetId": "sidecar_01HSZ4Z5W6VMPA9Y44Q6ZB7M1C",
+          "xmpAssetRevisionId": "sidecar_rev_0003",
+          "xmpDigest": "sha256:2e9b2c6b"
+        }
+      }
+    },
+    "stack": {
+      "entries": [
+        {
+          "id": "adj_exposure_01",
+          "tool": "exposure",
+          "stage": "tone",
+          "enabled": true,
+          "scope": {
+            "target": "global"
+          },
+          "params": {
+            "ev": 0.2
+          },
+          "paramSchemaVersion": 1,
+          "provenance": {
+            "actorType": "human",
+            "actorId": "user_donghee",
+            "sourceKind": "editor",
+            "summary": "Exposure slider adjustment"
+          },
+          "createdAt": "2026-04-05T09:48:00Z",
+          "updatedAt": "2026-04-05T09:49:10Z"
+        }
+      ]
+    }
+  },
+  "integrity": {
+    "stackHashAfter": "sha256:be2d4a90",
+    "eventHashChain": "sha256:8d2b7f6c"
+  }
+}

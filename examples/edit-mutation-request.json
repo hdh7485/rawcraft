@@ -1,0 +1,37 @@
+{
+  "requestId": "edit_mut_req_01HT010Q0K2N4B6V8M1S3D5F7H",
+  "documentLocator": {
+    "documentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB"
+  },
+  "creationDisposition": {
+    "mode": "require_existing"
+  },
+  "parentRevisionId": "rev_000124",
+  "actor": {
+    "id": "user_donghee",
+    "type": "human",
+    "displayName": "Donghee"
+  },
+  "source": {
+    "kind": "editor",
+    "clientId": "desktop-app",
+    "sessionId": "session_01HSZ5A0WMP9W0DF1FET6A8ZQB"
+  },
+  "intent": {
+    "kind": "manual_adjustment",
+    "summary": "Raised exposure slightly while fine-tuning skin tones",
+    "correlationId": "ui-slider-exposure"
+  },
+  "ops": [
+    {
+      "type": "adjustment.update_params",
+      "adjustmentId": "adj_exposure_01",
+      "params": {
+        "ev": 0.5
+      },
+      "previousParams": {
+        "ev": 0.35
+      }
+    }
+  ]
+}

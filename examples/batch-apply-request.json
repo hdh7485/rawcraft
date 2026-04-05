@@ -1,0 +1,58 @@
+{
+  "requestId": "batch_req_01HT001V4W5X6Y7Z8A9B0C1D2E",
+  "preset": {
+    "presetId": "preset_01HT001A7M5N6P7Q8R9S0T1U2V",
+    "sourceDocumentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB",
+    "sourceRevisionId": "rev_000124",
+    "label": "Warm wedding baseline",
+    "adjustments": [
+      {
+        "id": "adj_exposure_01",
+        "tool": "exposure",
+        "stage": "tone",
+        "enabled": true,
+        "scope": {
+          "target": "global"
+        },
+        "params": {
+          "ev": 0.35
+        },
+        "paramSchemaVersion": 1,
+        "provenance": {
+          "actorType": "human",
+          "actorId": "user_donghee",
+          "sourceKind": "editor",
+          "summary": "Exposure slider adjustment"
+        },
+        "createdAt": "2026-04-05T09:50:00Z",
+        "updatedAt": "2026-04-05T09:51:10Z"
+      },
+      {
+        "id": "adj_temperature_01",
+        "tool": "temperature",
+        "stage": "color",
+        "enabled": true,
+        "scope": {
+          "target": "global"
+        },
+        "params": {
+          "kelvinOffset": 350
+        },
+        "paramSchemaVersion": 1,
+        "provenance": {
+          "actorType": "human",
+          "actorId": "user_donghee",
+          "sourceKind": "editor",
+          "summary": "White balance warm-up"
+        },
+        "createdAt": "2026-04-05T09:50:20Z",
+        "updatedAt": "2026-04-05T09:51:10Z"
+      }
+    ]
+  },
+  "targetAssetIds": [
+    "asset_01HT0020AA1111111111111111",
+    "asset_01HT0020AA2222222222222222"
+  ],
+  "applyMode": "replace_global_adjustments"
+}

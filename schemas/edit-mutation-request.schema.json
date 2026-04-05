@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/edit-mutation-request.schema.json",
+  "title": "RawCraft Edit Mutation Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "documentLocator",
+    "creationDisposition",
+    "parentRevisionId",
+    "actor",
+    "source",
+    "intent",
+    "ops"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "documentLocator": {
+      "$ref": "#/$defs/documentLocator"
+    },
+    "creationDisposition": {
+      "$ref": "#/$defs/creationDisposition"
+    },
+    "parentRevisionId": {
+      "type": "string"
+    },
+    "actor": {
+      "$ref": "./history-event.schema.json#/properties/actor"
+    },
+    "source": {
+      "$ref": "./history-event.schema.json#/properties/source"
+    },
+    "intent": {
+      "$ref": "./history-event.schema.json#/properties/intent"
+    },
+    "ops": {
+      "$ref": "./history-event.schema.json#/properties/ops"
+    }
+  },
+  "$defs": {
+    "documentLocator": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "documentId"
+          ],
+          "properties": {
+            "documentId": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "assetId",
+            "basedOnAssetRevisionId"
+          ],
+          "properties": {
+            "assetId": {
+              "type": "string"
+            },
+            "basedOnAssetRevisionId": {
+              "type": "string"
+            },
+            "virtualCopyId": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "creationDisposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "require_existing",
+            "create_if_missing"
+          ]
+        },
+        "rendererVersion": {
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "./adjustment-stack.schema.json#/$defs/documentMetadata"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "mode": {
+                "const": "create_if_missing"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "rendererVersion"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

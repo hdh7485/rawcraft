@@ -1,0 +1,40 @@
+{
+  "eventId": "evt_01HSZ5D6E1PB9R4QPCX7T6GDSH",
+  "schemaVersion": "rawcraft.history-event/v1",
+  "documentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB",
+  "sequence": 123,
+  "parentRevisionId": "rev_000122",
+  "resultRevisionId": "rev_000123",
+  "timestamp": "2026-04-05T09:51:10Z",
+  "actor": {
+    "id": "user_donghee",
+    "type": "human",
+    "displayName": "Donghee"
+  },
+  "source": {
+    "kind": "editor",
+    "clientId": "desktop-app",
+    "sessionId": "session_01HSZ5A0WMP9W0DF1FET6A8ZQB"
+  },
+  "intent": {
+    "kind": "manual_adjustment",
+    "summary": "Increased exposure slightly after reviewing histogram",
+    "correlationId": "ui-slider-exposure"
+  },
+  "ops": [
+    {
+      "type": "adjustment.update_params",
+      "adjustmentId": "adj_exposure_01",
+      "params": {
+        "ev": 0.35
+      },
+      "previousParams": {
+        "ev": 0.2
+      }
+    }
+  ],
+  "integrity": {
+    "stackHashBefore": "sha256:23a2c4b9",
+    "stackHashAfter": "sha256:91e3a2df"
+  }
+}

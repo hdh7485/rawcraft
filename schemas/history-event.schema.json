@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/history-event.schema.json",
+  "title": "RawCraft History Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventId",
+    "schemaVersion",
+    "documentId",
+    "sequence",
+    "parentRevisionId",
+    "resultRevisionId",
+    "timestamp",
+    "actor",
+    "source",
+    "intent",
+    "ops"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "rawcraft.history-event/v1"
+    },
+    "documentId": {
+      "type": "string"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "parentRevisionId": {
+      "type": "string"
+    },
+    "resultRevisionId": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "human",
+            "ai",
+            "system"
+          ]
+        },
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "editor",
+            "ai_run",
+            "import",
+            "migration"
+          ]
+        },
+        "clientId": {
+          "type": "string"
+        },
+        "sessionId": {
+          "type": "string"
+        },
+        "runId": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        }
+      }
+    },
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "summary"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "promptDigest": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        }
+      }
+    },
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/stackInitialize"
+          },
+          {
+            "$ref": "#/$defs/adjustmentInsert"
+          },
+          {
+            "$ref": "#/$defs/adjustmentUpdateParams"
+          },
+          {
+            "$ref": "#/$defs/adjustmentSetEnabled"
+          },
+          {
+            "$ref": "#/$defs/adjustmentMove"
+          },
+          {
+            "$ref": "#/$defs/adjustmentRemove"
+          },
+          {
+            "$ref": "#/$defs/documentSetMetadata"
+          }
+        ]
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stackHashBefore": {
+          "type": "string"
+        },
+        "stackHashAfter": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stackInitialize": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "entries"
+      ],
+      "properties": {
+        "type": {
+          "const": "stack.initialize"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "./adjustment-stack.schema.json#/$defs/adjustmentEntry"
+          }
+        }
+      }
+    },
+    "adjustmentInsert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "index",
+        "entry"
+      ],
+      "properties": {
+        "type": {
+          "const": "adjustment.insert"
+        },
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entry": {
+          "$ref": "./adjustment-stack.schema.json#/$defs/adjustmentEntry"
+        }
+      }
+    },
+    "adjustmentUpdateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "adjustmentId",
+        "params"
+      ],
+      "properties": {
+        "type": {
+          "const": "adjustment.update_params"
+        },
+        "adjustmentId": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "previousParams": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "adjustmentSetEnabled": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "adjustmentId",
+        "enabled"
+      ],
+      "properties": {
+        "type": {
+          "const": "adjustment.set_enabled"
+        },
+        "adjustmentId": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "adjustmentMove": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "adjustmentId",
+        "toIndex"
+      ],
+      "properties": {
+        "type": {
+          "const": "adjustment.move"
+        },
+        "adjustmentId": {
+          "type": "string"
+        },
+        "toIndex": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "adjustmentRemove": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "adjustmentId"
+      ],
+      "properties": {
+        "type": {
+          "const": "adjustment.remove"
+        },
+        "adjustmentId": {
+          "type": "string"
+        }
+      }
+    },
+    "documentSetMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "metadata"
+      ],
+      "properties": {
+        "type": {
+          "const": "document.set_metadata"
+        },
+        "metadata": {
+          "$ref": "./adjustment-stack.schema.json#/$defs/documentMetadata"
+        }
+      }
+    }
+  }
+}

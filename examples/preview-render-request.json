@@ -1,0 +1,100 @@
+{
+  "requestId": "render_req_01HT0001KJ8Q9P4R6S7T8U9V0W",
+  "renderIntent": "edit_preview",
+  "targetPreviewTier": "edit_preview",
+  "document": {
+    "documentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB",
+    "schemaVersion": "rawcraft.adjustment-stack/v1",
+    "assetId": "asset_01HSZ4VKGK9N9VQMVTEWZ0P8R4",
+    "basedOnAssetRevisionId": "asset_rev_0001",
+    "currentRevisionId": "rev_000124",
+    "latestEventSequence": 124,
+    "rendererVersion": "process-pipeline/1.0.0",
+    "metadata": {
+      "renderLineage": {
+        "previewSource": {
+          "tier": "browse_preview",
+          "sourceAssetRevisionId": "asset_rev_0001",
+          "sourceRevisionId": "rev_000119",
+          "generatedAt": "2026-04-05T09:48:10Z"
+        },
+        "cacheLineage": {
+          "previewCacheVersion": "preview-cache/v3",
+          "renderCacheVersion": "render-cache/v5",
+          "invalidatesAfterSequence": 119
+        },
+        "inputProfiles": {
+          "cameraProfileId": "canon/eos-r6m2/adobe-standard",
+          "inputIccProfileId": "icc/adobe-rgb-1998",
+          "workingColorSpaceId": "color/linear-prophoto-rgb"
+        },
+        "sidecarLink": {
+          "xmpAssetId": "sidecar_01HSZ4Z5W6VMPA9Y44Q6ZB7M1C",
+          "xmpAssetRevisionId": "sidecar_rev_0003",
+          "xmpDigest": "sha256:2e9b2c6b"
+        }
+      }
+    },
+    "stack": {
+      "entries": [
+        {
+          "id": "adj_exposure_01",
+          "tool": "exposure",
+          "stage": "tone",
+          "enabled": true,
+          "scope": {
+            "target": "global"
+          },
+          "params": {
+            "ev": 0.35
+          },
+          "paramSchemaVersion": 1,
+          "provenance": {
+            "actorType": "human",
+            "actorId": "user_donghee",
+            "sourceKind": "editor",
+            "summary": "Exposure slider adjustment"
+          },
+          "createdAt": "2026-04-05T09:50:00Z",
+          "updatedAt": "2026-04-05T09:51:10Z"
+        },
+        {
+          "id": "adj_subject_mask_01",
+          "tool": "subject_light",
+          "stage": "local",
+          "enabled": true,
+          "scope": {
+            "target": "mask",
+            "maskId": "mask_subject_01"
+          },
+          "params": {
+            "exposure": 0.2,
+            "shadows": 18
+          },
+          "paramSchemaVersion": 1,
+          "blend": {
+            "mode": "normal",
+            "opacity": 0.85
+          },
+          "provenance": {
+            "actorType": "ai",
+            "actorId": "copilot",
+            "sourceKind": "ai_run",
+            "runId": "run_01HSZ57CN5D7AER3Y2GG5Z5B6J",
+            "model": "gpt-5.4",
+            "promptDigest": "sha256:5a3a2d4f",
+            "summary": "Accepted AI relight suggestion"
+          },
+          "createdAt": "2026-04-05T09:51:30Z",
+          "updatedAt": "2026-04-05T09:51:30Z"
+        }
+      ]
+    }
+  },
+  "output": {
+    "maxLongEdge": 2560,
+    "targetColorSpaceId": "display-p3",
+    "pixelFormat": "rgba16f",
+    "sharpenForDisplay": true
+  }
+}

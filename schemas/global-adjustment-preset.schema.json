@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/global-adjustment-preset.schema.json",
+  "title": "RawCraft Global Adjustment Preset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "presetId",
+    "sourceDocumentId",
+    "sourceRevisionId",
+    "adjustments"
+  ],
+  "properties": {
+    "presetId": {
+      "type": "string"
+    },
+    "sourceDocumentId": {
+      "type": "string"
+    },
+    "sourceRevisionId": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "adjustments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/copyableGlobalAdjustment"
+      }
+    }
+  },
+  "$defs": {
+    "copyableGlobalAdjustment": {
+      "allOf": [
+        {
+          "$ref": "./adjustment-stack.schema.json#/$defs/adjustmentEntry"
+        },
+        {
+          "properties": {
+            "tool": {
+              "type": "string",
+              "enum": [
+                "exposure",
+                "contrast",
+                "highlights",
+                "shadows",
+                "whites",
+                "blacks",
+                "temperature",
+                "tint",
+                "vibrance",
+                "saturation"
+              ]
+            },
+            "stage": {
+              "type": "string",
+              "enum": [
+                "base",
+                "tone",
+                "color",
+                "detail",
+                "geometry",
+                "effects"
+              ]
+            },
+            "scope": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "target"
+              ],
+              "properties": {
+                "target": {
+                  "const": "global"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

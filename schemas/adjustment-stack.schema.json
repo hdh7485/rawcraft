@@ -1,0 +1,327 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/adjustment-stack.schema.json",
+  "title": "RawCraft Adjustment Stack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "documentId",
+    "schemaVersion",
+    "assetId",
+    "basedOnAssetRevisionId",
+    "currentRevisionId",
+    "latestEventSequence",
+    "rendererVersion",
+    "stack"
+  ],
+  "properties": {
+    "documentId": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "rawcraft.adjustment-stack/v1"
+    },
+    "assetId": {
+      "type": "string"
+    },
+    "basedOnAssetRevisionId": {
+      "type": "string"
+    },
+    "virtualCopyId": {
+      "type": "string"
+    },
+    "currentRevisionId": {
+      "type": "string"
+    },
+    "latestEventSequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rendererVersion": {
+      "type": "string"
+    },
+    "metadata": {
+      "$ref": "#/$defs/documentMetadata"
+    },
+    "stack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entries"
+      ],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/adjustmentEntry"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "adjustmentEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tool",
+        "stage",
+        "enabled",
+        "scope",
+        "params",
+        "paramSchemaVersion",
+        "provenance",
+        "createdAt",
+        "updatedAt"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "tool": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string",
+          "enum": [
+            "base",
+            "tone",
+            "color",
+            "detail",
+            "geometry",
+            "local",
+            "effects"
+          ]
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target"
+          ],
+          "properties": {
+            "target": {
+              "type": "string",
+              "enum": [
+                "global",
+                "mask"
+              ]
+            },
+            "maskId": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "target": {
+                    "const": "mask"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "maskId"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "target": {
+                    "const": "global"
+                  }
+                }
+              },
+              "then": {
+                "not": {
+                  "required": [
+                    "maskId"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "params": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "paramSchemaVersion": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "blend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "opacity"
+          ],
+          "properties": {
+            "mode": {
+              "type": "string"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "documentMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "renderLineage": {
+          "$ref": "#/$defs/renderLineageMetadata"
+        },
+        "extensions": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "renderLineageMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "previewSource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tier"
+          ],
+          "properties": {
+            "tier": {
+              "type": "string",
+              "enum": [
+                "embedded_thumbnail",
+                "browse_preview",
+                "edit_preview",
+                "full_rerender"
+              ]
+            },
+            "sourceAssetRevisionId": {
+              "type": "string"
+            },
+            "sourceRevisionId": {
+              "type": "string"
+            },
+            "generatedAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "cacheLineage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "previewCacheVersion": {
+              "type": "string"
+            },
+            "renderCacheVersion": {
+              "type": "string"
+            },
+            "invalidatesAfterSequence": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "inputProfiles": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cameraProfileId": {
+              "type": "string"
+            },
+            "inputIccProfileId": {
+              "type": "string"
+            },
+            "workingColorSpaceId": {
+              "type": "string"
+            }
+          }
+        },
+        "sidecarLink": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "xmpAssetId": {
+              "type": "string"
+            },
+            "xmpAssetRevisionId": {
+              "type": "string"
+            },
+            "xmpDigest": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actorType",
+        "actorId",
+        "sourceKind"
+      ],
+      "properties": {
+        "actorType": {
+          "type": "string",
+          "enum": [
+            "human",
+            "ai",
+            "system"
+          ]
+        },
+        "actorId": {
+          "type": "string"
+        },
+        "sourceKind": {
+          "type": "string",
+          "enum": [
+            "editor",
+            "ai_run",
+            "import",
+            "migration"
+          ]
+        },
+        "runId": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "promptDigest": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

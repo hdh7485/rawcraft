@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/history-replay-request.schema.json",
+  "title": "RawCraft History Replay Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "documentId"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "documentId": {
+      "type": "string"
+    },
+    "throughSequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "checkpointPreference": {
+      "type": "string",
+      "enum": [
+        "prefer_latest",
+        "from_origin",
+        "require_checkpoint"
+      ]
+    },
+    "verifyIntegrity": {
+      "type": "boolean"
+    }
+  }
+}

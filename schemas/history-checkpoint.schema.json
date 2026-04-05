@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/history-checkpoint.schema.json",
+  "title": "RawCraft History Checkpoint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "checkpointId",
+    "schemaVersion",
+    "documentId",
+    "sequence",
+    "revisionId",
+    "capturedAt",
+    "document"
+  ],
+  "properties": {
+    "checkpointId": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "rawcraft.history-checkpoint/v1"
+    },
+    "documentId": {
+      "type": "string"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "revisionId": {
+      "type": "string"
+    },
+    "capturedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "latestEventId": {
+      "type": "string"
+    },
+    "document": {
+      "$ref": "./adjustment-stack.schema.json"
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stackHashAfter": {
+          "type": "string"
+        },
+        "eventHashChain": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

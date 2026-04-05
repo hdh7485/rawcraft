@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/batch-apply-response.schema.json",
+  "title": "RawCraft Batch Apply Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "results"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assetId",
+          "documentId",
+          "revisionId",
+          "eventId",
+          "status"
+        ],
+        "properties": {
+          "assetId": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "string"
+          },
+          "revisionId": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "skipped_existing"
+            ]
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

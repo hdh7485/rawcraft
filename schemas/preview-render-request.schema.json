@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/preview-render-request.schema.json",
+  "title": "RawCraft Preview Render Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "renderIntent",
+    "targetPreviewTier",
+    "document",
+    "output"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "renderIntent": {
+      "type": "string",
+      "enum": [
+        "browse_preview",
+        "edit_preview"
+      ]
+    },
+    "targetPreviewTier": {
+      "type": "string",
+      "enum": [
+        "embedded_thumbnail",
+        "browse_preview",
+        "edit_preview",
+        "full_rerender"
+      ]
+    },
+    "document": {
+      "$ref": "./adjustment-stack.schema.json"
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "maxLongEdge",
+        "targetColorSpaceId",
+        "pixelFormat"
+      ],
+      "properties": {
+        "maxLongEdge": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "targetColorSpaceId": {
+          "type": "string"
+        },
+        "pixelFormat": {
+          "type": "string",
+          "enum": [
+            "rgba8",
+            "rgba16f"
+          ]
+        },
+        "sharpenForDisplay": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

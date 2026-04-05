@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/batch-apply-request.schema.json",
+  "title": "RawCraft Batch Apply Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "preset",
+    "targetAssetIds",
+    "applyMode"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "preset": {
+      "$ref": "./global-adjustment-preset.schema.json"
+    },
+    "targetAssetIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "applyMode": {
+      "type": "string",
+      "enum": [
+        "replace_global_adjustments",
+        "merge_missing_only"
+      ]
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/preview-render-response.schema.json",
+  "title": "RawCraft Preview Render Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "documentId",
+    "revisionId",
+    "status",
+    "preview",
+    "cache",
+    "nextMetadata"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "documentId": {
+      "type": "string"
+    },
+    "revisionId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "degraded_source"
+      ]
+    },
+    "preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactId",
+        "width",
+        "height",
+        "mimeType",
+        "colorSpaceId",
+        "pixelFormat"
+      ],
+      "properties": {
+        "artifactId": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "colorSpaceId": {
+          "type": "string"
+        },
+        "pixelFormat": {
+          "type": "string",
+          "enum": [
+            "rgba8",
+            "rgba16f"
+          ]
+        }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hit",
+        "cacheKey",
+        "actualPreviewTier"
+      ],
+      "properties": {
+        "hit": {
+          "type": "boolean"
+        },
+        "cacheKey": {
+          "type": "string"
+        },
+        "actualPreviewTier": {
+          "type": "string",
+          "enum": [
+            "embedded_thumbnail",
+            "browse_preview",
+            "edit_preview",
+            "full_rerender"
+          ]
+        }
+      }
+    },
+    "nextMetadata": {
+      "$ref": "./adjustment-stack.schema.json#/$defs/documentMetadata"
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

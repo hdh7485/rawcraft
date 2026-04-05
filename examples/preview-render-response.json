@@ -1,0 +1,45 @@
+{
+  "requestId": "render_req_01HT0001KJ8Q9P4R6S7T8U9V0W",
+  "documentId": "edit_01HSZ4W0AQV3M7A0YQY7EJQ2AB",
+  "revisionId": "rev_000124",
+  "status": "ok",
+  "preview": {
+    "artifactId": "preview_01HT0009M2S3D4F5G6H7J8K9L0",
+    "width": 2560,
+    "height": 1707,
+    "mimeType": "image/jpeg",
+    "colorSpaceId": "display-p3",
+    "pixelFormat": "rgba16f"
+  },
+  "cache": {
+    "hit": false,
+    "cacheKey": "preview:rev_000124:edit_preview:2560:display-p3:preview-cache/v3:render-cache/v5",
+    "actualPreviewTier": "edit_preview"
+  },
+  "nextMetadata": {
+    "renderLineage": {
+      "previewSource": {
+        "tier": "edit_preview",
+        "sourceAssetRevisionId": "asset_rev_0001",
+        "sourceRevisionId": "rev_000124",
+        "generatedAt": "2026-04-05T10:08:10Z"
+      },
+      "cacheLineage": {
+        "previewCacheVersion": "preview-cache/v3",
+        "renderCacheVersion": "render-cache/v5",
+        "invalidatesAfterSequence": 124
+      },
+      "inputProfiles": {
+        "cameraProfileId": "canon/eos-r6m2/adobe-standard",
+        "inputIccProfileId": "icc/adobe-rgb-1998",
+        "workingColorSpaceId": "color/linear-prophoto-rgb"
+      },
+      "sidecarLink": {
+        "xmpAssetId": "sidecar_01HSZ4Z5W6VMPA9Y44Q6ZB7M1C",
+        "xmpAssetRevisionId": "sidecar_rev_0003",
+        "xmpDigest": "sha256:2e9b2c6b"
+      }
+    }
+  },
+  "warnings": []
+}

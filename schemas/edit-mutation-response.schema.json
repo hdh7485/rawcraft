@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rawcraft.local/schemas/edit-mutation-response.schema.json",
+  "title": "RawCraft Edit Mutation Response",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requestId",
+    "status"
+  ],
+  "properties": {
+    "requestId": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "applied",
+        "conflict"
+      ]
+    },
+    "document": {
+      "$ref": "./adjustment-stack.schema.json"
+    },
+    "event": {
+      "$ref": "./history-event.schema.json"
+    },
+    "checkpoint": {
+      "$ref": "./history-checkpoint.schema.json"
+    },
+    "conflict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expectedParentRevisionId",
+        "actualRevisionId",
+        "actualLatestEventSequence",
+        "actualDocument"
+      ],
+      "properties": {
+        "expectedParentRevisionId": {
+          "type": "string"
+        },
+        "actualRevisionId": {
+          "type": "string"
+        },
+        "actualLatestEventSequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actualDocument": {
+          "$ref": "./adjustment-stack.schema.json"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "applied"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "document",
+          "event"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "conflict"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "conflict"
+        ]
+      }
+    }
+  ]
+}

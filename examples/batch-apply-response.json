@@ -1,0 +1,20 @@
+{
+  "requestId": "batch_req_01HT001V4W5X6Y7Z8A9B0C1D2E",
+  "results": [
+    {
+      "assetId": "asset_01HT0020AA1111111111111111",
+      "documentId": "edit_01HT0025BBBBBBBBBBBBBBBBBB",
+      "revisionId": "rev_000021",
+      "eventId": "evt_01HT0026CCCCCCCCCCCCCCCCCC",
+      "status": "applied"
+    },
+    {
+      "assetId": "asset_01HT0020AA2222222222222222",
+      "documentId": "edit_01HT0027DDDDDDDDDDDDDDDDDD",
+      "revisionId": "rev_000011",
+      "eventId": "evt_01HT0028EEEEEEEEEEEEEEEEEE",
+      "status": "applied"
+    }
+  ],
+  "warnings": []
+}
