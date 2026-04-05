@@ -14,8 +14,11 @@ import {
   createCorrelationId,
   createEditorRequestMetadata,
   createEditorRuntime,
+  createSourcePreset,
   ensureActiveDocument,
   summarizeAsset,
+  summarizeManifestAsset,
+  summarizePreset,
   summarizeDocument,
   summarizeEvent,
   summarizeMutationResult,
@@ -26,6 +29,10 @@ const DEFAULT_HOST = "127.0.0.1";
 const DEFAULT_PORT = 4173;
 const DEFAULT_PREVIEW_DELAY_MS = 650;
 const SHELL_CLIENT_ROOT = new URL("./editor-shell/", import.meta.url);
+const APPLY_MODES = [
+  "replace_global_adjustments",
+  "merge_missing_only"
+];
 
 const CONTROL_SPECS = [
   {
@@ -151,6 +158,12 @@ export async function startEditorShellServer(options = {}) {
         return;
       }
 
+      if (request.method === "POST" && url.pathname === "/api/operations/apply-batch-preset") {
+        const body = await readJsonBody(request);
+        sendJson(response, 202, session.startApplyBatchPreset(body));
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/api/operations/simulate-conflict") {
         const body = await readJsonBody(request);
         sendJson(response, 200, await session.simulateConcurrentEdit(body));
@@ -242,16 +255,29 @@ export class EditorShellSession {
     const history = document
       ? await this.runtime.mutationService.readHistory(document.documentId, { limit: 12 })
       : [];
+    const sourcePreset = document
+      ? summarizePreset(createSourcePreset(this.runtime, document))
+      : null;
 
     return {
       bootstrapped: this.bootstrapped,
       workspaceRoot: this.runtime.workspaceRoot,
       ingestRoot: this.runtime.ingestRoot,
       asset: summarizeAsset(this.runtime.asset),
+      manifestAssets: this.runtime.manifest.assets.map((asset) =>
+        summarizeManifestAsset(asset, {
+          activeAssetId: state.activeAssetId,
+          selectedAssetIds: state.selection
+        })
+      ),
       document: summarizeDocument(document),
       preview: state.preview,
       pendingMutation: state.pendingMutation,
       pendingPreviewRevisionId: state.pendingPreviewRevisionId,
+      selection: [...state.selection],
+      sourcePreset,
+      batchApply: state.batchApply,
+      applyModes: [...APPLY_MODES],
       history: history.slice().reverse().map((event) => summarizeEvent(event)),
       controls: buildControlState(document),
       activeOperation: this.activeOperation ? summarizeOperation(this.activeOperation) : null,
@@ -329,6 +355,41 @@ export class EditorShellSession {
           mutation: result.mutation ? summarizeMutationResult(result.mutation) : null,
           preview: result.preview ? summarizePreviewResult(result.preview) : null,
           conflict: result.response?.conflict ?? null
+        };
+      })
+    );
+  }
+
+  startApplyBatchPreset(body = {}) {
+    const targetAssetIds = normalizeTargetAssetIds(body.targetAssetIds);
+    if (targetAssetIds.length === 0) {
+      throw new HttpError(400, "apply-batch-preset requires at least one target asset id.");
+    }
+
+    const applyMode = parseApplyMode(body.applyMode);
+    ensureKnownTargetAssetIds(this.runtime.manifest.assets, targetAssetIds);
+
+    return this.#startOperation("apply-batch-preset", async () =>
+      this.#withPreviewDelay(body.delayMs, async () => {
+        const document = this.controller.getState().document;
+        const preset = createSourcePreset(this.runtime, document, {
+          label: normalizeOptionalLabel(body.label)
+        });
+        const response = await this.controller.applyBatchPreset({
+          preset,
+          targetAssetIds,
+          applyMode
+        });
+        const state = this.controller.getState();
+
+        return {
+          status: state.batchApply?.status ?? "completed",
+          document: summarizeDocument(state.document),
+          preview: state.preview,
+          selection: state.selection,
+          preset: summarizePreset(preset),
+          batchApply: state.batchApply,
+          response
         };
       })
     );
@@ -522,6 +583,65 @@ function parseNumericInput(value, controlSpec) {
   }
 
   return numericValue;
+}
+
+function normalizeTargetAssetIds(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const normalized = [];
+  const seen = new Set();
+
+  for (const candidate of value) {
+    if (typeof candidate !== "string") {
+      continue;
+    }
+
+    const trimmed = candidate.trim();
+    if (trimmed.length === 0 || seen.has(trimmed)) {
+      continue;
+    }
+
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  }
+
+  return normalized;
+}
+
+function parseApplyMode(value) {
+  if (value == null) {
+    return APPLY_MODES[0];
+  }
+
+  if (!APPLY_MODES.includes(value)) {
+    throw new HttpError(
+      400,
+      `Unsupported apply mode ${value}. Expected one of ${APPLY_MODES.join(", ")}.`
+    );
+  }
+
+  return value;
+}
+
+function normalizeOptionalLabel(value) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function ensureKnownTargetAssetIds(assets, targetAssetIds) {
+  const assetIds = new Set(assets.map((asset) => asset.assetId));
+
+  for (const assetId of targetAssetIds) {
+    if (!assetIds.has(assetId)) {
+      throw new HttpError(400, `Unknown target asset ${assetId}.`);
+    }
+  }
 }
 
 function normalizeDelayMs(delayMs, fallbackDelayMs) {

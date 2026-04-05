@@ -85,6 +85,68 @@ test("the editor shell exposes preview refresh, mutation commits, and optimistic
   }
 });
 
+test("the editor shell exposes source presets, target selection, and batch-apply reconciliation", async () => {
+  const workspaceRoot = await mkdtemp(join(tmpdir(), "rawcraft-shell-batch-"));
+  const targetAssetIds = [
+    "asset_canon_r6_frame_001",
+    "asset_fuji_x100v_frame_002"
+  ];
+  const { server, origin } = await startEditorShellServer({
+    host: "127.0.0.1",
+    port: 0,
+    assetId: "asset_canon_r6_frame_001",
+    ingestRoot: FIXTURE_INGEST_ROOT,
+    workspaceRoot,
+    previewDelayMs: 40
+  });
+
+  try {
+    const initialSnapshot = await getJson(`${origin}/api/session`);
+    assert.equal(initialSnapshot.sourcePreset.adjustmentCount, 1);
+    assert.equal(initialSnapshot.manifestAssets.length, 2);
+    assert.deepEqual(initialSnapshot.selection, []);
+
+    const accepted = await postJson(`${origin}/api/operations/apply-batch-preset`, {
+      targetAssetIds,
+      applyMode: "replace_global_adjustments"
+    });
+    assert.equal(accepted.status, "accepted");
+
+    const completedSnapshot = await waitForIdleSnapshot(origin);
+    assert.equal(completedSnapshot.lastOperation.type, "apply-batch-preset");
+    assert.equal(completedSnapshot.lastOperation.status, "completed");
+    assert.deepEqual(completedSnapshot.selection, targetAssetIds);
+    assert.equal(completedSnapshot.batchApply.status, "completed");
+    assert.deepEqual(
+      completedSnapshot.batchApply.targets.map((target) => target.assetId),
+      targetAssetIds
+    );
+    assert.deepEqual(
+      completedSnapshot.batchApply.targets.map((target) => target.previewRefresh.status),
+      ["applied", "applied"]
+    );
+    assert.equal(completedSnapshot.preview.stale, false);
+    assert.equal(completedSnapshot.document.assetId, "asset_canon_r6_frame_001");
+    assert.deepEqual(
+      completedSnapshot.manifestAssets
+        .filter((asset) => asset.isSelected)
+        .map((asset) => asset.assetId),
+      targetAssetIds
+    );
+  } finally {
+    await new Promise((resolvePromise, rejectPromise) => {
+      server.close((error) => {
+        if (error) {
+          rejectPromise(error);
+          return;
+        }
+        resolvePromise();
+      });
+    });
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
 async function waitForIdleSnapshot(origin) {
   return waitForSnapshot(origin, (snapshot) => !snapshot.activeOperation);
 }

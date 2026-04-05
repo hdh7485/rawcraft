@@ -1,6 +1,8 @@
 const state = {
   snapshot: null,
-  pollHandle: null
+  pollHandle: null,
+  batchSelection: null,
+  batchApplyMode: "replace_global_adjustments"
 };
 
 const elements = {
@@ -13,7 +15,15 @@ const elements = {
   operationSummary: document.querySelector("#operation-summary"),
   controlsGrid: document.querySelector("#controls-grid"),
   historyList: document.querySelector("#history-list"),
-  controlCardTemplate: document.querySelector("#control-card-template")
+  controlCardTemplate: document.querySelector("#control-card-template"),
+  batchSourceSummary: document.querySelector("#batch-source-summary"),
+  batchSelectionSummary: document.querySelector("#batch-selection-summary"),
+  batchApplyForm: document.querySelector("#batch-apply-form"),
+  batchApplyMode: document.querySelector("#batch-apply-mode"),
+  batchApplyButton: document.querySelector("#batch-apply"),
+  batchClearSelection: document.querySelector("#batch-clear-selection"),
+  batchTargetList: document.querySelector("#batch-target-list"),
+  batchResults: document.querySelector("#batch-results")
 };
 
 elements.refreshPreview.addEventListener("click", async () => {
@@ -26,12 +36,52 @@ elements.simulateConflict.addEventListener("click", async () => {
   await refreshSnapshot();
 });
 
+elements.batchApplyMode.addEventListener("change", () => {
+  state.batchApplyMode = elements.batchApplyMode.value;
+  renderBatchApply();
+});
+
+elements.batchClearSelection.addEventListener("click", () => {
+  state.batchSelection = new Set();
+  renderBatchApply();
+});
+
+elements.batchApplyForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const targetAssetIds = [...getBatchSelection()];
+  if (targetAssetIds.length === 0) {
+    return;
+  }
+
+  await postJson("/api/operations/apply-batch-preset", {
+    targetAssetIds,
+    applyMode: state.batchApplyMode
+  });
+  await refreshSnapshot();
+});
+
 await refreshSnapshot();
 
 async function refreshSnapshot() {
   state.snapshot = await getJson("/api/session");
+  hydrateBatchDrafts();
   render();
   syncPolling();
+}
+
+function hydrateBatchDrafts() {
+  if (state.batchSelection === null) {
+    state.batchSelection = new Set(state.snapshot.selection ?? []);
+  }
+
+  if (
+    state.snapshot.applyModes?.includes(state.batchApplyMode) !== true &&
+    Array.isArray(state.snapshot.applyModes) &&
+    state.snapshot.applyModes.length > 0
+  ) {
+    state.batchApplyMode = state.snapshot.applyModes[0];
+  }
 }
 
 function syncPolling() {
@@ -59,6 +109,7 @@ function render() {
   renderPreview();
   renderStatus();
   renderControls();
+  renderBatchApply();
   renderHistory();
 }
 
@@ -132,7 +183,7 @@ function renderStatus() {
   if (!operation) {
     elements.operationSummary.innerHTML = `
       <div class="callout">
-        <strong>Ready.</strong> Commit a control change or force a preview refresh to inspect runtime behavior.
+        <strong>Ready.</strong> Commit a control change, refresh the preview, or run a batch apply pass to inspect the runtime behavior.
       </div>
     `;
     return;
@@ -208,6 +259,193 @@ function renderControls() {
   }
 }
 
+function renderBatchApply() {
+  const snapshot = state.snapshot;
+  const selection = getBatchSelection();
+  const sourcePreset = snapshot.sourcePreset;
+  const targetCount = selection.size;
+  const batchApply = snapshot.batchApply;
+  const batchBusy = snapshot.activeOperation?.type === "apply-batch-preset";
+
+  elements.batchApplyMode.innerHTML = (snapshot.applyModes ?? [])
+    .map(
+      (mode) => `<option value="${escapeHtml(mode)}">${escapeHtml(formatApplyMode(mode))}</option>`
+    )
+    .join("");
+  elements.batchApplyMode.value = state.batchApplyMode;
+  elements.batchApplyMode.disabled = Boolean(snapshot.activeOperation);
+
+  elements.batchSourceSummary.innerHTML = renderSourcePreset(sourcePreset);
+  elements.batchSelectionSummary.innerHTML = `
+    <div class="batch-selection-card">
+      <div>
+        <span class="meta-label">Selection</span>
+        <strong>${targetCount} target${targetCount === 1 ? "" : "s"}</strong>
+      </div>
+      <div>
+        <span class="meta-label">Mode</span>
+        <strong>${escapeHtml(formatApplyMode(state.batchApplyMode))}</strong>
+      </div>
+    </div>
+  `;
+
+  elements.batchTargetList.innerHTML = (snapshot.manifestAssets ?? [])
+    .map((asset) => renderTargetAsset(asset, selection))
+    .join("");
+  for (const checkbox of elements.batchTargetList.querySelectorAll("input[type=\"checkbox\"]")) {
+    checkbox.addEventListener("change", () => {
+      const nextSelection = new Set(selection);
+      if (checkbox.checked) {
+        nextSelection.add(checkbox.value);
+      } else {
+        nextSelection.delete(checkbox.value);
+      }
+
+      state.batchSelection = nextSelection;
+      renderBatchApply();
+    });
+  }
+
+  elements.batchApplyButton.disabled = targetCount === 0 || Boolean(snapshot.activeOperation);
+  elements.batchApplyButton.textContent = batchBusy
+    ? "Applying..."
+    : `Apply to ${targetCount || "0"} Target${targetCount === 1 ? "" : "s"}`;
+  elements.batchClearSelection.disabled = targetCount === 0 || Boolean(snapshot.activeOperation);
+
+  elements.batchResults.innerHTML = renderBatchResults(batchApply);
+}
+
+function renderBatchResults(batchApply) {
+  if (!batchApply) {
+    return `
+      <div class="callout">
+        <strong>No batch run yet.</strong> Select one or more assets from the ingest manifest to test cross-target reconciliation.
+      </div>
+    `;
+  }
+
+  const warnings = (batchApply.warnings ?? [])
+    .map((warning) => `<li>${escapeHtml(warning)}</li>`)
+    .join("");
+  const targetRows = batchApply.targets
+    .map((target) => {
+      const badges = [
+        renderBadge(formatBatchStatus(target.batchStatus), toneForBatchStatus(target.batchStatus)),
+        renderBadge(
+          formatPreviewRefreshStatus(target.previewRefresh.status),
+          toneForPreviewStatus(target.previewRefresh.status)
+        )
+      ].join("");
+
+      return `
+        <li class="batch-result-row">
+          <div class="batch-result-header">
+            <div>
+              <strong>${escapeHtml(target.assetId)}</strong>
+              <p>${escapeHtml(target.documentId)} · ${escapeHtml(target.revisionId)}</p>
+            </div>
+            <div class="batch-result-badges">${badges}</div>
+          </div>
+          <p class="batch-result-meta">
+            Preview revision ${escapeHtml(target.previewRefresh.revisionId ?? "none")} ·
+            artifact ${escapeHtml(target.previewRefresh.artifact?.artifactId ?? "none")}
+          </p>
+          ${target.previewRefresh.error
+            ? `<p class="error-text">${escapeHtml(target.previewRefresh.error)}</p>`
+            : ""}
+        </li>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="batch-results-card">
+      <div class="batch-results-header">
+        <div>
+          <span class="meta-label">Latest Batch Apply</span>
+          <strong>${escapeHtml(batchApply.status)}</strong>
+        </div>
+        <div>
+          <span class="meta-label">Source</span>
+          <strong>${escapeHtml(batchApply.sourceDocumentId ?? "none")}</strong>
+        </div>
+      </div>
+      ${warnings ? `<ul class="warning-list">${warnings}</ul>` : ""}
+      <ol class="batch-results-list">${targetRows}</ol>
+    </div>
+  `;
+}
+
+function renderSourcePreset(sourcePreset) {
+  if (!sourcePreset) {
+    return `
+      <div class="callout">
+        <strong>No active document.</strong> The shell cannot build a batch preset until the session document is loaded.
+      </div>
+    `;
+  }
+
+  const adjustments = sourcePreset.adjustments.length > 0
+    ? sourcePreset.adjustments
+        .map(
+          (entry) => `
+            <li class="preset-entry">
+              <strong>${escapeHtml(entry.tool)}</strong>
+              <span>${escapeHtml(formatParams(entry.params))}</span>
+            </li>
+          `
+        )
+        .join("")
+    : `
+      <li class="preset-entry preset-entry-empty">
+        <strong>No copyable global adjustments</strong>
+        <span>Commit one or more global controls before testing batch apply.</span>
+      </li>
+    `;
+
+  return `
+    <div class="batch-source-card">
+      <div class="batch-source-header">
+        <div>
+          <span class="meta-label">Source Preset</span>
+          <strong>${escapeHtml(sourcePreset.label ?? sourcePreset.presetId)}</strong>
+        </div>
+        <div>
+          <span class="meta-label">Adjustments</span>
+          <strong>${sourcePreset.adjustmentCount}</strong>
+        </div>
+      </div>
+      <p class="batch-source-meta">
+        ${escapeHtml(sourcePreset.sourceDocumentId)} · ${escapeHtml(sourcePreset.sourceRevisionId)}
+      </p>
+      <ul class="preset-entry-list">${adjustments}</ul>
+    </div>
+  `;
+}
+
+function renderTargetAsset(asset, selection) {
+  const badges = [
+    asset.isActive ? renderBadge("Active", "info") : "",
+    selection.has(asset.assetId) ? renderBadge("Selected", "success") : ""
+  ].join("");
+
+  return `
+    <label class="target-card${asset.isActive ? " target-card-active" : ""}">
+      <input type="checkbox" value="${escapeHtml(asset.assetId)}" ${selection.has(asset.assetId) ? "checked" : ""} />
+      <div class="target-card-body">
+        <div class="target-card-header">
+          <div>
+            <strong>${escapeHtml(asset.fileName ?? asset.assetId)}</strong>
+            <p>${escapeHtml(asset.assetId)}</p>
+          </div>
+          <div class="target-card-badges">${badges}</div>
+        </div>
+        <p class="target-card-path">${escapeHtml(asset.assetPath)}</p>
+      </div>
+    </label>
+  `;
+}
+
 function renderHistory() {
   const items = state.snapshot.history.map((event) => {
     const opList = event.ops.map((op) => `<span class="history-op">${escapeHtml(op)}</span>`).join("");
@@ -277,6 +515,10 @@ function renderPreviewMarkup(snapshot) {
   return `<img alt="Preview viewport" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}" />`;
 }
 
+function getBatchSelection() {
+  return state.batchSelection ?? new Set();
+}
+
 function renderBadge(label, tone) {
   return `<span class="badge badge-${tone}">${escapeHtml(label)}</span>`;
 }
@@ -284,6 +526,75 @@ function renderBadge(label, tone) {
 function formatControlValue(value, step) {
   const fractionDigits = String(step).includes(".") ? String(step).split(".")[1].length : 0;
   return Number(value).toFixed(fractionDigits);
+}
+
+function formatApplyMode(applyMode) {
+  switch (applyMode) {
+    case "replace_global_adjustments":
+      return "Replace existing global adjustments";
+    case "merge_missing_only":
+      return "Merge missing tools only";
+    default:
+      return applyMode;
+  }
+}
+
+function formatBatchStatus(status) {
+  switch (status) {
+    case "applied":
+      return "Applied";
+    case "skipped_existing":
+      return "Skipped existing";
+    default:
+      return status;
+  }
+}
+
+function toneForBatchStatus(status) {
+  switch (status) {
+    case "applied":
+      return "success";
+    case "skipped_existing":
+      return "warning";
+    default:
+      return "info";
+  }
+}
+
+function formatPreviewRefreshStatus(status) {
+  switch (status) {
+    case "applied":
+      return "Preview refreshed";
+    case "skipped_existing":
+      return "No refresh needed";
+    case "pending":
+      return "Preview pending";
+    case "failed":
+      return "Preview failed";
+    default:
+      return status;
+  }
+}
+
+function toneForPreviewStatus(status) {
+  switch (status) {
+    case "applied":
+      return "success";
+    case "failed":
+      return "danger";
+    case "pending":
+      return "info";
+    case "skipped_existing":
+      return "warning";
+    default:
+      return "info";
+  }
+}
+
+function formatParams(params) {
+  return Object.entries(params ?? {})
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(", ");
 }
 
 async function getJson(url) {
@@ -317,7 +628,7 @@ function escapeHtml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+    .replaceAll("\"", "&quot;")
     .replaceAll("'", "&#39;");
 }
 
@@ -326,6 +637,6 @@ function escapeXml(value) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+    .replaceAll("\"", "&quot;")
     .replaceAll("'", "&apos;");
 }

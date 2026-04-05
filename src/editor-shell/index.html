@@ -59,6 +59,33 @@
           <div id="controls-grid" class="controls-grid"></div>
         </section>
 
+        <section class="panel batch-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Batch Apply</p>
+              <h2>Preset Propagation</h2>
+            </div>
+          </div>
+          <div id="batch-source-summary"></div>
+          <div id="batch-selection-summary" class="batch-selection-summary"></div>
+          <form id="batch-apply-form" class="batch-form">
+            <label class="batch-mode-field">
+              <span class="meta-label">Apply Mode</span>
+              <select id="batch-apply-mode"></select>
+            </label>
+            <div class="batch-actions">
+              <button id="batch-clear-selection" class="secondary-action" type="button">
+                Clear Selection
+              </button>
+              <button id="batch-apply" class="primary-action" type="submit">
+                Apply to 0 Targets
+              </button>
+            </div>
+          </form>
+          <div id="batch-target-list" class="batch-target-list"></div>
+          <div id="batch-results" class="batch-results"></div>
+        </section>
+
         <section class="panel history-panel">
           <div class="panel-heading">
             <div>

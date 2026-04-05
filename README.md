@@ -59,6 +59,16 @@ npm run harness -- show-history --asset asset_canon_r6_frame_001
 
 # Commit a global adjustment and let the controller refresh preview metadata.
 npm run harness -- set-global exposure --asset asset_canon_r6_frame_001 --params '{"ev":0.8}'
+
+# Extract the copyable preset from the active document's global adjustments.
+npm run harness -- extract-preset --asset asset_canon_r6_frame_001
+
+# Apply the active preset to selected assets and reconcile their previews.
+npm run harness -- apply-batch-preset \
+  asset_canon_r6_frame_001 \
+  asset_fuji_x100v_frame_002 \
+  --asset asset_canon_r6_frame_001 \
+  --apply-mode replace_global_adjustments
 ```
 
 Use `--workspace-root <path>` to point the harness at a different repo-local
@@ -87,6 +97,10 @@ Open the printed URL in a browser. The shell intentionally stays narrow:
 - live preview viewport derived from the current preview artifact state
 - committed history list from the persisted edit document
 - global control commits routed through `editorSessionController`
+- source preset extraction from the active document plus manifest-backed target
+  selection for batch apply
+- per-target batch reconciliation state, including background preview refresh
+  results
 - a `Simulate Conflict` action that advances the store outside the shell so the
   next local commit visibly trips optimistic concurrency
 

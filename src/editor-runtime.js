@@ -15,6 +15,7 @@ import {
   createPreviewRenderer,
   InMemoryPreviewCache
 } from "./preview-renderer.js";
+import { createGlobalAdjustmentBatchApplyService } from "./global-adjustment-batch-apply.js";
 
 export const DEFAULT_WORKSPACE_ROOT = resolve(process.cwd(), ".rawcraft-workspace");
 export const DEFAULT_INGEST_ROOT = resolve(process.cwd(), "tests", "fixtures", "ingest-assets");
@@ -60,6 +61,9 @@ export async function createEditorRuntime(options = {}) {
   const previewRenderer = createPreviewRenderer({
     cache: new InMemoryPreviewCache()
   });
+  const batchApplyService = createGlobalAdjustmentBatchApplyService({
+    mutationService
+  });
 
   return {
     workspaceRoot,
@@ -69,7 +73,8 @@ export async function createEditorRuntime(options = {}) {
     store,
     asset,
     mutationService,
-    previewRenderer
+    previewRenderer,
+    batchApplyService
   };
 }
 
@@ -99,13 +104,24 @@ export function createController(runtime, document, options = {}) {
   const controller = createEditorSessionController({
     mutationClient: runtime.mutationService,
     previewClient: options.previewClient ?? runtime.previewRenderer,
-    batchApplyClient: options.batchApplyClient,
+    batchApplyClient: options.batchApplyClient ?? runtime.batchApplyService,
     output: options.output ?? DEFAULT_OUTPUT
   });
   controller.loadDocument(document, {
     selection: options.selection ?? []
   });
   return controller;
+}
+
+export function createSourcePreset(runtime, document, options = {}) {
+  if (!runtime?.batchApplyService?.extractPreset) {
+    throw new Error("The editor runtime does not expose batch preset extraction.");
+  }
+
+  return runtime.batchApplyService.extractPreset(document, {
+    presetId: options.presetId ?? buildPresetId(document),
+    label: options.label ?? `Global preset from ${document.assetId}`
+  });
 }
 
 export function buildGlobalAdjustmentOps({ document, tool, params }) {
@@ -240,6 +256,38 @@ export function summarizeAsset(asset) {
   };
 }
 
+export function summarizeManifestAsset(asset, {
+  activeAssetId = null,
+  selectedAssetIds = []
+} = {}) {
+  const selectionSet = new Set(selectedAssetIds);
+
+  return {
+    assetId: asset.assetId,
+    assetRevisionId: asset.assetRevisionId,
+    assetPath: asset.assetPath,
+    fileName: asset.assetIdentity?.fileName ?? null,
+    isActive: asset.assetId === activeAssetId,
+    isSelected: selectionSet.has(asset.assetId)
+  };
+}
+
+export function summarizePreset(preset) {
+  return {
+    presetId: preset.presetId,
+    label: preset.label ?? null,
+    sourceDocumentId: preset.sourceDocumentId,
+    sourceRevisionId: preset.sourceRevisionId,
+    adjustmentCount: preset.adjustments.length,
+    adjustments: preset.adjustments.map((entry) => ({
+      id: entry.id,
+      tool: entry.tool,
+      enabled: entry.enabled,
+      params: structuredClone(entry.params)
+    }))
+  };
+}
+
 export function parseOptionalInteger(value) {
   if (value == null) {
     return undefined;
@@ -309,4 +357,8 @@ function findGlobalInsertionIndex(entries) {
 
 function createAdjustmentId(tool) {
   return `adj_${tool}_${Date.now()}`;
+}
+
+function buildPresetId(document) {
+  return `preset_${document.documentId}_${document.currentRevisionId}`;
 }

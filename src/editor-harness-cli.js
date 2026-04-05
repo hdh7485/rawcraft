@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import {
   GLOBAL_TOOL_STAGES,
   buildGlobalAdjustmentOps,
+  createSourcePreset,
   createController as createRuntimeController,
   createCorrelationId,
   createEditorRequestMetadata,
@@ -14,6 +15,7 @@ import {
   ensureActiveDocument,
   parseOptionalInteger,
   summarizeAsset,
+  summarizePreset,
   summarizeDocument,
   summarizeEvent,
   summarizeMutationResult,
@@ -25,7 +27,13 @@ const SUPPORTED_COMMANDS = new Set([
   "status",
   "refresh-preview",
   "show-history",
-  "set-global"
+  "set-global",
+  "extract-preset",
+  "apply-batch-preset"
+]);
+const APPLY_MODES = new Set([
+  "replace_global_adjustments",
+  "merge_missing_only"
 ]);
 
 export async function main(argv = process.argv.slice(2)) {
@@ -89,6 +97,26 @@ export async function main(argv = process.argv.slice(2)) {
         bootstrapped: activeDocumentState.bootstrapped,
         tool: positionals[0],
         params: parseJsonObjectOption(options.params, "--params")
+      });
+      break;
+
+    case "extract-preset":
+      output = handleExtractPreset({
+        runtime,
+        document: activeDocumentState.document,
+        bootstrapped: activeDocumentState.bootstrapped,
+        label: parseOptionalLabel(options.label)
+      });
+      break;
+
+    case "apply-batch-preset":
+      output = await handleApplyBatchPreset({
+        runtime,
+        document: activeDocumentState.document,
+        bootstrapped: activeDocumentState.bootstrapped,
+        targetAssetIds: parseTargetAssetIds(positionals, options.targets),
+        applyMode: parseApplyMode(options["apply-mode"]),
+        label: parseOptionalLabel(options.label)
       });
       break;
 
@@ -169,6 +197,49 @@ async function handleSetGlobal({ runtime, document, bootstrapped, tool, params }
   };
 }
 
+function handleExtractPreset({ runtime, document, bootstrapped, label }) {
+  const preset = createSourcePreset(runtime, document, { label });
+
+  return {
+    status: "ok",
+    bootstrapped,
+    document: summarizeDocument(document),
+    preset: summarizePreset(preset)
+  };
+}
+
+async function handleApplyBatchPreset({
+  runtime,
+  document,
+  bootstrapped,
+  targetAssetIds,
+  applyMode,
+  label
+}) {
+  if (targetAssetIds.length === 0) {
+    throw new Error("apply-batch-preset requires at least one target asset id.");
+  }
+
+  const controller = createController(runtime, document);
+  const preset = createSourcePreset(runtime, document, { label });
+  const response = await controller.applyBatchPreset({
+    preset,
+    targetAssetIds,
+    applyMode
+  });
+  const state = controller.getState();
+
+  return {
+    status: state.batchApply?.status ?? "completed",
+    bootstrapped,
+    document: summarizeDocument(state.document),
+    preset: summarizePreset(preset),
+    selection: state.selection,
+    batchApply: state.batchApply,
+    response
+  };
+}
+
 function createController(runtime, document) {
   return createRuntimeController(runtime, document);
 }
@@ -234,6 +305,51 @@ function parseJsonObjectOption(value, flagName) {
   } catch (error) {
     throw new Error(`Could not parse ${flagName}: ${error.message}`);
   }
+}
+
+function parseApplyMode(value) {
+  if (value == null) {
+    return "replace_global_adjustments";
+  }
+
+  if (!APPLY_MODES.has(value)) {
+    throw new Error(
+      `Unsupported --apply-mode ${value}. Expected one of ${[...APPLY_MODES].join(", ")}.`
+    );
+  }
+
+  return value;
+}
+
+function parseOptionalLabel(value) {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function parseTargetAssetIds(positionals, optionValue) {
+  const values = [];
+  const seen = new Set();
+
+  for (const candidate of [
+    ...positionals,
+    ...String(optionValue ?? "")
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+  ]) {
+    if (seen.has(candidate)) {
+      continue;
+    }
+
+    seen.add(candidate);
+    values.push(candidate);
+  }
+
+  return values;
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {

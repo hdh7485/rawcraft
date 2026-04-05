@@ -134,8 +134,12 @@ input {
 }
 
 .status-panel,
-.history-panel {
+.batch-panel {
   grid-column: 2;
+}
+
+.history-panel {
+  grid-column: 1 / span 2;
 }
 
 .panel-heading {
@@ -261,6 +265,157 @@ input {
   margin-top: 18px;
 }
 
+.batch-selection-summary,
+.batch-target-list,
+.batch-results {
+  margin-top: 18px;
+}
+
+.batch-source-card,
+.batch-selection-card,
+.batch-results-card,
+.target-card {
+  background: var(--paper);
+  border: 1px solid rgba(24, 36, 39, 0.08);
+  border-radius: 20px;
+}
+
+.batch-source-card,
+.batch-selection-card,
+.batch-results-card {
+  padding: 16px;
+}
+
+.batch-source-header,
+.batch-results-header,
+.target-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.batch-source-meta,
+.target-card-header p,
+.target-card-path,
+.batch-result-meta {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+}
+
+.preset-entry-list,
+.warning-list,
+.batch-results-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preset-entry-list,
+.batch-results-list {
+  display: grid;
+  gap: 10px;
+}
+
+.preset-entry {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(45, 81, 88, 0.08);
+}
+
+.preset-entry strong,
+.batch-result-header strong,
+.target-card strong {
+  display: block;
+}
+
+.preset-entry span {
+  color: var(--ink-muted);
+  font-family: "SFMono-Regular", "Menlo", monospace;
+  font-size: 0.85rem;
+}
+
+.preset-entry-empty {
+  display: block;
+}
+
+.batch-selection-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.batch-form {
+  margin-top: 18px;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.batch-mode-field {
+  display: grid;
+  gap: 8px;
+}
+
+.batch-mode-field select,
+.control-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(24, 36, 39, 0.14);
+  background: var(--paper-strong);
+}
+
+.batch-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.batch-target-list {
+  display: grid;
+  gap: 12px;
+}
+
+.target-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.target-card input {
+  margin-top: 6px;
+  accent-color: var(--orange);
+}
+
+.target-card-active {
+  border-color: rgba(45, 81, 88, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(45, 81, 88, 0.12);
+}
+
+.target-card-badges,
+.batch-result-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.batch-result-row {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(24, 36, 39, 0.04);
+}
+
 .control-card {
   padding: 14px;
 }
@@ -292,10 +447,6 @@ input {
 
 .control-input {
   width: 94px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid rgba(24, 36, 39, 0.14);
-  background: var(--paper-strong);
 }
 
 .history-list {
@@ -358,6 +509,7 @@ input {
   .viewport-panel,
   .controls-panel,
   .status-panel,
+  .batch-panel,
   .history-panel {
     grid-column: 1;
   }
