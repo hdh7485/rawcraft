@@ -78,22 +78,28 @@ export async function createEditorRuntime(options = {}) {
   };
 }
 
-export async function ensureActiveDocument(runtime) {
+export async function ensureActiveDocument(runtime, options = {}) {
+  const asset = resolveActiveAsset(
+    runtime.manifest,
+    typeof options === "string" ? options : options.assetId ?? runtime.asset?.assetId
+  );
+  runtime.asset = asset;
   const locator = {
-    assetId: runtime.asset.assetId,
-    basedOnAssetRevisionId: runtime.asset.assetRevisionId
+    assetId: asset.assetId,
+    basedOnAssetRevisionId: asset.assetRevisionId
   };
   let document = await runtime.mutationService.readDocument(locator);
   let bootstrapped = false;
 
   if (!document) {
-    const seed = await loadSeedBundle(runtime);
+    const seed = await loadSeedBundle(runtime, asset);
     await runtime.store.seedDocument(seed.document, [seed.event]);
     document = seed.document;
     bootstrapped = true;
   }
 
   return {
+    asset,
     locator,
     document,
     bootstrapped
@@ -306,24 +312,24 @@ export async function writeJsonFile(filePath, value) {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
-async function loadSeedBundle(runtime) {
+async function loadSeedBundle(runtime, asset = runtime.asset) {
   const seedResponse = JSON.parse(
     await readFile(new URL("../examples/edit-mutation-response.json", import.meta.url), "utf8")
   );
   const seedDocument = applyIngestManifestToDocument({
     document: {
       ...seedResponse.document,
-      documentId: `edit_${runtime.asset.assetId}`,
-      assetId: runtime.asset.assetId,
-      basedOnAssetRevisionId: runtime.asset.assetRevisionId
+      documentId: `edit_${asset.assetId}`,
+      assetId: asset.assetId,
+      basedOnAssetRevisionId: asset.assetRevisionId
     },
     manifest: runtime.manifest,
-    assetId: runtime.asset.assetId
+    assetId: asset.assetId
   });
 
   if (seedDocument.metadata?.renderLineage?.previewSource) {
     seedDocument.metadata.renderLineage.previewSource.sourceAssetRevisionId =
-      runtime.asset.assetRevisionId;
+      asset.assetRevisionId;
   }
 
   return {

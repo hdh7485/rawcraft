@@ -264,6 +264,69 @@ export class EditorSessionController {
     };
   }
 
+  async hydratePreview({
+    renderIntent = this.renderIntent,
+    targetPreviewTier = this.targetPreviewTier,
+    output = this.output
+  } = {}) {
+    const document = this.#requireDocument();
+    const requestId = this.requestIdGenerator("preview");
+    const previewRequest = {
+      requestId,
+      renderIntent,
+      targetPreviewTier,
+      document: clone(document),
+      output: clone(output)
+    };
+
+    this.state.pendingPreviewRevisionId = document.currentRevisionId;
+    this.state.preview = this.state.preview
+      ? {
+          ...this.state.preview,
+          stale: true
+        }
+      : {
+          stale: true,
+          artifact: null,
+          revisionId: null,
+          actualPreviewTier: null,
+          warnings: [],
+          cache: null
+        };
+
+    const previewResponse = await this.previewClient.render(previewRequest);
+    const expectedRevisionId = this.state.pendingPreviewRevisionId;
+
+    if (
+      expectedRevisionId !== previewResponse.revisionId ||
+      this.state.document.currentRevisionId !== previewResponse.revisionId
+    ) {
+      this.state.pendingPreviewRevisionId = null;
+      return {
+        status: "discarded_stale_preview",
+        response: clone(previewResponse),
+        state: this.getState()
+      };
+    }
+
+    this.state.pendingPreviewRevisionId = null;
+    this.state.preview = {
+      stale: false,
+      artifact: clone(previewResponse.preview),
+      revisionId: this.state.document.currentRevisionId,
+      requestedRevisionId: previewResponse.revisionId,
+      actualPreviewTier: previewResponse.cache.actualPreviewTier,
+      warnings: [...previewResponse.warnings],
+      cache: clone(previewResponse.cache)
+    };
+
+    return {
+      status: "applied",
+      previewResponse: clone(previewResponse),
+      state: this.getState()
+    };
+  }
+
   async applyBatchPreset({ preset, targetAssetIds, applyMode, requestId }) {
     if (!this.batchApplyClient?.apply) {
       throw new Error("Batch apply requires a batchApplyClient.apply function.");

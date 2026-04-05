@@ -1,7 +1,6 @@
 const state = {
   snapshot: null,
   pollHandle: null,
-  batchSelection: null,
   batchApplyMode: "replace_global_adjustments"
 };
 
@@ -16,6 +15,8 @@ const elements = {
   controlsGrid: document.querySelector("#controls-grid"),
   historyList: document.querySelector("#history-list"),
   controlCardTemplate: document.querySelector("#control-card-template"),
+  assetSwitchSummary: document.querySelector("#asset-switch-summary"),
+  assetList: document.querySelector("#asset-list"),
   batchSourceSummary: document.querySelector("#batch-source-summary"),
   batchSelectionSummary: document.querySelector("#batch-selection-summary"),
   batchApplyForm: document.querySelector("#batch-apply-form"),
@@ -41,9 +42,9 @@ elements.batchApplyMode.addEventListener("change", () => {
   renderBatchApply();
 });
 
-elements.batchClearSelection.addEventListener("click", () => {
-  state.batchSelection = new Set();
-  renderBatchApply();
+elements.batchClearSelection.addEventListener("click", async () => {
+  await updateSelection([]);
+  await refreshSnapshot();
 });
 
 elements.batchApplyForm.addEventListener("submit", async (event) => {
@@ -71,10 +72,6 @@ async function refreshSnapshot() {
 }
 
 function hydrateBatchDrafts() {
-  if (state.batchSelection === null) {
-    state.batchSelection = new Set(state.snapshot.selection ?? []);
-  }
-
   if (
     state.snapshot.applyModes?.includes(state.batchApplyMode) !== true &&
     Array.isArray(state.snapshot.applyModes) &&
@@ -108,6 +105,7 @@ function syncPolling() {
 function render() {
   renderPreview();
   renderStatus();
+  renderAssetSwitcher();
   renderControls();
   renderBatchApply();
   renderHistory();
@@ -259,6 +257,44 @@ function renderControls() {
   }
 }
 
+function renderAssetSwitcher() {
+  const snapshot = state.snapshot;
+  const activeOperation = snapshot.activeOperation;
+  const activeAsset = snapshot.asset;
+  const selectionCount = snapshot.selection?.length ?? 0;
+
+  elements.assetSwitchSummary.innerHTML = `
+    <div class="asset-switch-card">
+      <div>
+        <span class="meta-label">Active Asset</span>
+        <strong>${escapeHtml(activeAsset.assetId)}</strong>
+      </div>
+      <div>
+        <span class="meta-label">Manifest Assets</span>
+        <strong>${snapshot.manifestAssets.length}</strong>
+      </div>
+      <div>
+        <span class="meta-label">Batch Targets</span>
+        <strong>${selectionCount}</strong>
+      </div>
+    </div>
+  `;
+
+  elements.assetList.innerHTML = snapshot.manifestAssets
+    .map((asset) => renderAssetSwitchCard(asset, snapshot.bootstrapped))
+    .join("");
+
+  for (const button of elements.assetList.querySelectorAll("[data-switch-asset-id]")) {
+    button.disabled = Boolean(activeOperation) || button.dataset.switchAssetId === activeAsset.assetId;
+    button.addEventListener("click", async () => {
+      await postJson("/api/operations/switch-asset", {
+        assetId: button.dataset.switchAssetId
+      });
+      await refreshSnapshot();
+    });
+  }
+}
+
 function renderBatchApply() {
   const snapshot = state.snapshot;
   const selection = getBatchSelection();
@@ -293,7 +329,8 @@ function renderBatchApply() {
     .map((asset) => renderTargetAsset(asset, selection))
     .join("");
   for (const checkbox of elements.batchTargetList.querySelectorAll("input[type=\"checkbox\"]")) {
-    checkbox.addEventListener("change", () => {
+    checkbox.disabled = Boolean(snapshot.activeOperation);
+    checkbox.addEventListener("change", async () => {
       const nextSelection = new Set(selection);
       if (checkbox.checked) {
         nextSelection.add(checkbox.value);
@@ -301,8 +338,8 @@ function renderBatchApply() {
         nextSelection.delete(checkbox.value);
       }
 
-      state.batchSelection = nextSelection;
-      renderBatchApply();
+      await updateSelection([...nextSelection]);
+      await refreshSnapshot();
     });
   }
 
@@ -446,6 +483,34 @@ function renderTargetAsset(asset, selection) {
   `;
 }
 
+function renderAssetSwitchCard(asset, bootstrapped) {
+  const badges = [
+    asset.isActive ? renderBadge("Active", "info") : "",
+    asset.isSelected ? renderBadge("Batch Target", "success") : "",
+    asset.isActive && bootstrapped ? renderBadge("Bootstrapped", "warning") : ""
+  ].join("");
+
+  return `
+    <div class="asset-card${asset.isActive ? " asset-card-active" : ""}">
+      <div class="asset-card-header">
+        <div>
+          <strong>${escapeHtml(asset.fileName ?? asset.assetId)}</strong>
+          <p>${escapeHtml(asset.assetId)}</p>
+        </div>
+        <div class="target-card-badges">${badges}</div>
+      </div>
+      <p class="target-card-path">${escapeHtml(asset.assetPath)}</p>
+      <button
+        class="${asset.isActive ? "primary-action" : "secondary-action"} asset-switch-button"
+        type="button"
+        data-switch-asset-id="${escapeHtml(asset.assetId)}"
+      >
+        ${asset.isActive ? "Current Asset" : "Switch Active Asset"}
+      </button>
+    </div>
+  `;
+}
+
 function renderHistory() {
   const items = state.snapshot.history.map((event) => {
     const opList = event.ops.map((op) => `<span class="history-op">${escapeHtml(op)}</span>`).join("");
@@ -516,7 +581,13 @@ function renderPreviewMarkup(snapshot) {
 }
 
 function getBatchSelection() {
-  return state.batchSelection ?? new Set();
+  return new Set(state.snapshot.selection ?? []);
+}
+
+async function updateSelection(targetAssetIds) {
+  await postJson("/api/session/selection", {
+    targetAssetIds
+  });
 }
 
 function renderBadge(label, tone) {

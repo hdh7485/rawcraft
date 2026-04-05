@@ -146,6 +146,18 @@ export async function startEditorShellServer(options = {}) {
         return;
       }
 
+      if (request.method === "POST" && url.pathname === "/api/session/selection") {
+        const body = await readJsonBody(request);
+        sendJson(response, 200, await session.updateSelection(body));
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/operations/switch-asset") {
+        const body = await readJsonBody(request);
+        sendJson(response, 202, session.startSwitchAsset(body));
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/api/operations/refresh-preview") {
         const body = await readJsonBody(request);
         sendJson(response, 202, session.startRefreshPreview(body));
@@ -285,6 +297,13 @@ export class EditorShellSession {
     };
   }
 
+  async updateSelection(body = {}) {
+    const targetAssetIds = normalizeTargetAssetIds(body.targetAssetIds);
+    ensureKnownTargetAssetIds(this.runtime.manifest.assets, targetAssetIds);
+    this.controller.setSelection(targetAssetIds);
+    return this.getSnapshot();
+  }
+
   startRefreshPreview(body = {}) {
     return this.#startOperation("refresh-preview", async () =>
       this.#withPreviewDelay(body.delayMs, async () => {
@@ -307,6 +326,34 @@ export class EditorShellSession {
           status: result.status,
           document: summarizeDocument(result.state.document),
           preview: summarizePreviewResult(result)
+        };
+      })
+    );
+  }
+
+  startSwitchAsset(body = {}) {
+    const assetId = normalizeRequiredAssetId(body.assetId);
+    ensureKnownTargetAssetIds(this.runtime.manifest.assets, [assetId]);
+
+    return this.#startOperation("switch-asset", async () =>
+      this.#withPreviewDelay(body.delayMs, async () => {
+        const selection = this.controller.getState().selection;
+        const activeDocumentState = await ensureActiveDocument(this.runtime, { assetId });
+        this.locator = activeDocumentState.locator;
+        this.bootstrapped = activeDocumentState.bootstrapped;
+        this.controller.loadDocument(activeDocumentState.document, {
+          selection
+        });
+        const previewResult = await this.controller.hydratePreview();
+        const state = this.controller.getState();
+
+        return {
+          status: previewResult.status,
+          asset: summarizeAsset(this.runtime.asset),
+          bootstrapped: this.bootstrapped,
+          document: summarizeDocument(state.document),
+          preview: state.preview,
+          selection: [...state.selection]
         };
       })
     );
@@ -608,6 +655,14 @@ function normalizeTargetAssetIds(value) {
   }
 
   return normalized;
+}
+
+function normalizeRequiredAssetId(value) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new HttpError(400, "switch-asset requires a non-empty assetId.");
+  }
+
+  return value.trim();
 }
 
 function parseApplyMode(value) {

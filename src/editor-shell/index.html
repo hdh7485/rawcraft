@@ -12,8 +12,8 @@
         <p class="eyebrow">RawCraft</p>
         <h1>Interactive Editor Shell</h1>
         <p class="hero-copy">
-          One active asset, one committed edit lineage, and the real preview and
-          mutation runtime behind every action.
+          Switch across manifest-backed assets while keeping one committed edit
+          lineage and the real preview and mutation runtime behind every action.
         </p>
         <div class="hero-actions">
           <button id="refresh-preview" class="primary-action" type="button">
@@ -47,6 +47,17 @@
           </div>
           <div id="status-summary" class="status-summary"></div>
           <div id="operation-summary" class="operation-summary"></div>
+        </section>
+
+        <section class="panel assets-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">Assets</p>
+              <h2>Active Document Routing</h2>
+            </div>
+          </div>
+          <div id="asset-switch-summary" class="asset-switch-summary"></div>
+          <div id="asset-list" class="asset-list"></div>
         </section>
 
         <section class="panel controls-panel">

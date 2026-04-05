@@ -93,7 +93,7 @@ npm run editor-shell -- \
 
 Open the printed URL in a browser. The shell intentionally stays narrow:
 
-- one active asset only
+- switch the active asset from the manifest inventory without restarting the shell
 - live preview viewport derived from the current preview artifact state
 - committed history list from the persisted edit document
 - global control commits routed through `editorSessionController`
